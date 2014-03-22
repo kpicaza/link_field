@@ -12,7 +12,7 @@ function link_field_field_info() {
       'label' => t('Link field'),
       'description' => t('Simple link field.'),
       'default_widget' => 'link_field_form',
-      'default_formatter' => 'link formatter',
+      'default_formatter' => 'link_formatter',
     ),
   );
 }
@@ -30,7 +30,44 @@ function link_field_field_info() {
 function link_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
   foreach ($items as $delta => $item) {
     if (!empty($item['url'])) {
-      $errors[$field['field_name']][$langcode][$delta][] = _validate_link($item['link']);
+      if (empty($item['title'])) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'link_field_invalid',
+          'message' => t('Link title is required.'),
+        );
+        continue;
+      }
+      if (!valid_url($item['url'], TRUE)) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'link_field_invalid',
+          'message' => t('Link must be valid url.'),
+        );
+        continue;
+      }
+      $response = drupal_http_request($item['url']);
+      if ($response->code != 200) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'link_field_invalid',
+          'message' => t('This url hen not valid response'),
+        );
+        continue;
+      }
+    }
+    if (!empty($item['title'])) {
+      if (empty($item['url'])) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'link_field_invalid',
+          'message' => t('Url title is required.'),
+        );
+        continue;
+      }
+      if ($item['title'] != strip_tags($item['title'])) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'link_field_invalid',
+          'message' => t('Link title must be clean of html tags.'),
+        );
+        continue;
+      }
     }
   }
 }
@@ -41,23 +78,19 @@ function link_field_field_validate($entity_type, $entity, $field, $instance, $la
  * hook_field_is_emtpy() is where Drupal asks us if this field is empty.
  * Return TRUE if it does not contain data, FALSE if it does. This lets
  * the form API flag an error when required fields are empty.
+ * 
+ * @param array $item
+ * @param array $field
+ * @return boolean
  */
 function link_field_field_is_empty($item, $field) {
+  $ret = FALSE;
   if ($field['type'] == 'link_field') {
-    if (empty($item['url'])) {
-      $return = TRUE;
-    }
-    if (empty($item['title'])) {
-      $return = TRUE;
-    }
-    if (empty($item['rel'])) {
-      $return = TRUE;
-    }
-    if (empty($item['target'])) {
-      $return = TRUE;
+    if (empty($item['url']) && empty($item['title'])) {
+      $ret = TRUE;
     }
   }
-  return FALSE;
+  return $ret;
 }
 
 /**
@@ -67,9 +100,9 @@ function link_field_field_is_empty($item, $field) {
  */
 function link_field_field_formatter_info() {
   return array(
-    'external_link_formatter' => array(
-      'label' => t('External link'),
-      'field types' => array('text'),
+    'link_formatter' => array(
+      'label' => t('Link'),
+      'field types' => array('link_field'),
       'description' => t('field description'),
     )
   );
@@ -82,13 +115,106 @@ function link_field_field_formatter_info() {
 function link_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
   switch ($display['type']) {
-    case 'external_link_formatter':
+    case 'link_formatter':
       foreach ($items as $delta => $item) {
         $element[$delta] = array(
-          '#markup' => _link_formater_callback($item['value']),
+          '#markup' => _link_formater_callback($item),
         );
       }
       break;
   }
   return $element;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function link_field_field_widget_info() {
+  return array(
+    'link_field_form' => array(
+      'label' => t('text'),
+      'field types' => array('link_field'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_alter().
+ * 
+ * @param type $form
+ * @param type $form_state
+ * @param type $form_id
+ */
+function link_field_form_alter(&$form, &$form_state, $form_id) {
+  $form['#attached']['css'] = array(
+    drupal_get_path('module', 'link_field') . '/link_field.css',
+  );
+  return $form;
+}
+
+/**
+ * Implements hook_field_widget_form().
+ * 
+ * @param type $form
+ * @param type $form_state
+ * @param type $field
+ * @param type $instance
+ * @param type $langcode
+ * @param type $items
+ * @param type $delta
+ * @param type $element
+ * @return string
+ */
+function link_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  if ($instance['widget']['type'] == 'link_field_form') {
+    $widget = $instance['widget'];
+    $settings = $widget['settings'];
+    $element['url'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Link URL'),
+      '#description' => t('This field accepts absolute URLs paths in the following format: https://api.drupal.org'),
+      '#default_value' => isset($items[$delta]['url']) ? $items[$delta]['url'] : '',
+    );
+    $element['title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Link title'),
+      '#description' => t('Text to display in link'),
+      '#default_value' => isset($items[$delta]['title']) ? $items[$delta]['title'] : '',
+    );
+    $element['rel'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Link rel'),
+      '#description' => t('values: <em>nofollow</em> for external links, left empty for <em>dofollow</em> links.'),
+      '#default_value' => isset($items[$delta]['rel']) ? $items[$delta]['rel'] : '',
+    );
+    $element['target'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Link target'),
+      '#description' => t('values: <em>_blank</em> opens link in a new window...'),
+      '#default_value' => isset($items[$delta]['target']) ? $items[$delta]['target'] : '',
+    );
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_error().
+ *
+ * hook_field_widget_error() lets us figure out what to do with errors
+ * we might have generated in hook_field_validate(). Generally, we'll just
+ * call form_error().
+ *
+ * @see form_error()
+ * 
+ * @param type $element
+ * @param type $error
+ * @param type $form
+ * @param type $form_state
+ */
+function link_field_field_widget_error($element, $error, $form, &$form_state) {
+  switch ($error['error']) {
+    case 'link_field_invalid':
+      form_error($element, $error['message']);
+      break;
+  }
 }
