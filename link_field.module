@@ -1,0 +1,94 @@
+<?php
+
+include_once 'link_field.inc';
+
+/**
+ * Implements hook_field_info().
+ * 
+ */
+function link_field_field_info() {
+  return array(
+    'link_field' => array(
+      'label' => t('Link field'),
+      'description' => t('Simple link field.'),
+      'default_widget' => 'link_field_form',
+      'default_formatter' => 'link formatter',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_validate().
+ * 
+ * First check if url is valid.
+ * Then make request to github.com to obtain valid response.
+ *  
+ * @see field_example_field_widget_error()
+ * @see valid_url()
+ * @see drupal_http_request()
+ */
+function link_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  foreach ($items as $delta => $item) {
+    if (!empty($item['url'])) {
+      $errors[$field['field_name']][$langcode][$delta][] = _validate_link($item['link']);
+    }
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ *
+ * hook_field_is_emtpy() is where Drupal asks us if this field is empty.
+ * Return TRUE if it does not contain data, FALSE if it does. This lets
+ * the form API flag an error when required fields are empty.
+ */
+function link_field_field_is_empty($item, $field) {
+  if ($field['type'] == 'link_field') {
+    if (empty($item['url'])) {
+      $return = TRUE;
+    }
+    if (empty($item['title'])) {
+      $return = TRUE;
+    }
+    if (empty($item['rel'])) {
+      $return = TRUE;
+    }
+    if (empty($item['target'])) {
+      $return = TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_field_formatter_info_alter().
+ * 
+ * @see https://api.drupal.org/api/drupal/modules!field!field.api.php/function/hook_field_formatter_info/7 .
+ */
+function link_field_field_formatter_info() {
+  return array(
+    'external_link_formatter' => array(
+      'label' => t('External link'),
+      'field types' => array('text'),
+      'description' => t('field description'),
+    )
+  );
+}
+
+/**
+ * Implemntes hook_field_formatter_view();
+ * 
+ */
+function link_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  switch ($display['type']) {
+    case 'external_link_formatter':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          '#markup' => _link_formater_callback($item['value']),
+        );
+      }
+      break;
+  }
+  return $element;
+}

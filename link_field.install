@@ -1,0 +1,43 @@
+<?php
+
+
+/**
+ * Implements github_widget_field daabase schema.
+ * 
+ * @see https://api.drupal.org/api/drupal/modules!field!field.api.php/function/hook_field_schema/7
+ * 
+ * @param array $field 
+ *   $field drupal fields array.
+ * 
+ * @return array
+ *   field keys type, columns & indexes. 
+ */
+function link_field_field_schema($field) {
+  // Return array that contains.
+  if ($field['type'] == 'link_field') {
+    $schema['columns']['url'] = array(
+      'type' => 'varchar',
+      'length' => '40',
+      'not null' => FALSE,
+    );
+    $schema['columns']['title'] = array(
+      'type' => 'varchar',
+      'length' => '140',
+      'not null' => FALSE,
+    );
+    $schema['columns']['rel'] = array(
+      'type' => 'varchar',
+      'length' => '40',
+      'not null' => FALSE,
+    );
+    $schema['columns']['target'] = array(
+      'type' => 'varchar',
+      'length' => '40',
+      'not null' => FALSE,
+    );
+    $schema['indexes'] = array(
+      'title' => array('title'),
+    );
+  }
+  return $schema;
+}

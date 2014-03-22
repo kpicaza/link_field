@@ -1,0 +1,6 @@
+name = Link field
+description = Field that provides link formatter using Field api.
+package = fields
+core = 7.x
+
+dependencies[] = text
