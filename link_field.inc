@@ -23,3 +23,29 @@ function _link_formater_callback($values) {
 
   return l($values['link_text'], $url, array('attributes' => $attributes));
 }
+
+/**
+ * Function that provide a list of 'rel' attribute values.
+ * 
+ * @see http://www.w3schools.com/TAGS/att_a_rel.asp
+ * 
+ * @return array
+ */
+function _link_rel_options() {
+  return array(
+    '', 'alternate', 'author', 'bookmark', 'help', 'license', 'next', 'nofollow', 'noreferrer', 'prefetch', 'prev', 'search', 'tag',
+  );
+}
+
+/**
+ * Function that provide a list of 'target' attribute values.
+ * 
+ * @see http://www.w3schools.com/tags/att_a_target.asp
+ * 
+ * @return array
+ */
+function _link_target_options() {
+  return array(
+    '', '_blank', '_self', '_parent', '_top',
+  );
+}
