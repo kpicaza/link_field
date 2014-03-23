@@ -1,13 +1,62 @@
 /*
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
-*/
-/* 
-    Created on : 22-mar-2014, 19:53:41
-    Author     : kpicaza
-*/
+ * Link field module form stylesheet.
+ */
 
-.node-form .field-type-link-field{
-    border: 1px solid #000;
+.node-form .field-type-link-field {
+    border: 1px solid #ccc;
+    padding: 20px 35px;
+}
+
+.node-form .field-type-link-field .link_field_url_wrapper {
+    width: 47%;
+    float: left;
+    clear: left;
+}
+
+.node-form .field-type-link-field .link_field_link_text_wrapper {
+    width: 47%;
+    float: right;
+    clear: right;
+}
+
+.node-form .field-type-link-field .link_field_attributes_wrapper {
+    clear: both;
+}
+
+.node-form .field-type-link-field .link_field_attributes {
+    clear: both;
+    padding: 35px;
+}
+
+.node-form .field-type-link-field .link_field_attributes.hidden {
+    display: none;
+}
+
+.node-form .field-type-link-field .link_field_attributes_label {
+    width: 100%;
+    clear: both;
+    cursor: pointer;
+}
+
+.node-form .field-type-link-field .link_field_title_wrapper {
+    width: 30%;
+    float: left;
+}
+
+.node-form .field-type-link-field .link_field_link_rel_wrapper {
+    margin-left: 5%;;
+    width: 30%;
+    float: left;
+}
+
+.node-form .field-type-link-field .link_field_link_target_wrapper {
+    width: 30%;
+    float: right;
+}
+
+.node-form .field-type-link-field .link_field_title_wrapper input,
+.node-form .field-type-link-field .link_field_link_rel_wrapper input,
+.node-form .field-type-link-field .link_field_link_target_wrapper input {
+    width: 90%;
+    margin: 0 auto;
 }

@@ -20,6 +20,11 @@ function link_field_field_schema($field) {
       'length' => '40',
       'not null' => FALSE,
     );
+    $schema['columns']['link_text'] = array(
+      'type' => 'varchar',
+      'length' => '140',
+      'not null' => FALSE,
+    );
     $schema['columns']['title'] = array(
       'type' => 'varchar',
       'length' => '140',

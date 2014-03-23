@@ -30,10 +30,10 @@ function link_field_field_info() {
 function link_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
   foreach ($items as $delta => $item) {
     if (!empty($item['url'])) {
-      if (empty($item['title'])) {
+      if (empty($item['link_text'])) {
         $errors[$field['field_name']][$langcode][$delta][] = array(
           'error' => 'link_field_invalid',
-          'message' => t('Link title is required.'),
+          'message' => t('Link text is required.'),
         );
         continue;
       }
@@ -53,14 +53,23 @@ function link_field_field_validate($entity_type, $entity, $field, $instance, $la
         continue;
       }
     }
-    if (!empty($item['title'])) {
+    if (!empty($item['link_text'])) {
       if (empty($item['url'])) {
         $errors[$field['field_name']][$langcode][$delta][] = array(
           'error' => 'link_field_invalid',
-          'message' => t('Url title is required.'),
+          'message' => t('Link url is required.'),
         );
         continue;
       }
+      if ($item['title'] != strip_tags($item['title'])) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'link_field_invalid',
+          'message' => t('Link text must be clean of html tags.'),
+        );
+        continue;
+      }
+    }
+    if (!empty($item['title'])) {
       if ($item['title'] != strip_tags($item['title'])) {
         $errors[$field['field_name']][$langcode][$delta][] = array(
           'error' => 'link_field_invalid',
@@ -86,7 +95,7 @@ function link_field_field_validate($entity_type, $entity, $field, $instance, $la
 function link_field_field_is_empty($item, $field) {
   $ret = FALSE;
   if ($field['type'] == 'link_field') {
-    if (empty($item['url']) && empty($item['title'])) {
+    if (empty($item['url']) && empty($item['link_text'])) {
       $ret = TRUE;
     }
   }
@@ -146,8 +155,9 @@ function link_field_field_widget_info() {
  * @param type $form_id
  */
 function link_field_form_alter(&$form, &$form_state, $form_id) {
+  $path = _link_field_path();
   $form['#attached']['css'] = array(
-    drupal_get_path('module', 'link_field') . '/link_field.css',
+    $path . '/link_field.css',
   );
   return $form;
 }
@@ -174,24 +184,46 @@ function link_field_field_widget_form(&$form, &$form_state, $field, $instance, $
       '#title' => t('Link URL'),
       '#description' => t('This field accepts absolute URLs paths in the following format: https://api.drupal.org'),
       '#default_value' => isset($items[$delta]['url']) ? $items[$delta]['url'] : '',
+      '#prefix' => '<h4>' . t('Link field') . '</h4><div class="link_field_url_wrapper">',
+      '#suffix' => '</div>',
+    );
+    $element['link_text'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Link text'),
+      '#description' => t('Text lo display on link'),
+      '#default_value' => isset($items[$delta]['link_text']) ? $items[$delta]['link_text'] : '',
+      '#prefix' => '<div class="link_field_link_text_wrapper">',
+      '#suffix' => '</div>',
     );
     $element['title'] = array(
       '#type' => 'textfield',
       '#title' => t('Link title'),
-      '#description' => t('Text to display in link'),
+      '#description' => t('Link anchor text'),
       '#default_value' => isset($items[$delta]['title']) ? $items[$delta]['title'] : '',
+      '#prefix' => '<fieldset class="collapsible link_field_attributes_wrapper collapsed">'
+      . '<legend><span class="fieldset-legend link_field_attributes_label">'
+      . '<span class="fieldset-legend-prefix element-invisible">View</span>'
+      . '<a class"fieldset-title" href="#">' . t('Link attributes') . '</a>'
+      . '<span class="summary"></span></span></legend>'
+      . '<div class="fieldset-wrapper link_field_attributes">'
+      . '<div class="link_field_title_wrapper">',
+      '#suffix' => '</div>',
     );
     $element['rel'] = array(
       '#type' => 'textfield',
       '#title' => t('Link rel'),
       '#description' => t('values: <em>nofollow</em> for external links, left empty for <em>dofollow</em> links.'),
       '#default_value' => isset($items[$delta]['rel']) ? $items[$delta]['rel'] : '',
+      '#prefix' => '<div class="link_field_link_rel_wrapper">',
+      '#suffix' => '</div>',
     );
     $element['target'] = array(
       '#type' => 'textfield',
       '#title' => t('Link target'),
       '#description' => t('values: <em>_blank</em> opens link in a new window...'),
       '#default_value' => isset($items[$delta]['target']) ? $items[$delta]['target'] : '',
+      '#prefix' => '<div class="link_field_link_target_wrapper">',
+      '#suffix' => '</div></div></fieldset>',
     );
   }
   return $element;

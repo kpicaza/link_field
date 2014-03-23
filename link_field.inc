@@ -1,5 +1,9 @@
 <?php
 
+function _link_field_path() {
+  return drupal_get_path('module', 'link_field');
+}
+
 /**
  * External link markup callback.
  * 
@@ -14,6 +18,8 @@ function _link_formater_callback($values) {
       $attributes[$key] = $value;
     }
   }
+  unset($attributes['url']);
+  unset($attributes['link_text']);
 
-  return l($values['title'], $url, array('attributes' => $attributes));
+  return l($values['link_text'], $url, array('attributes' => $attributes));
 }
